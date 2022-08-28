@@ -6,15 +6,15 @@ output: html_document
 ---
 ```{r}
 ```
-#Getting started with NFL data and R
+# Getting started with NFL data and R  
 Start by loading the nflfastR package and library, and tidyverse. You only have to do this once.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-install.packages("nflfastR")
-install.packages("tidyverse")
+install.packages("nflfastR",repos = "http://cran.us.r-project.org")
+install.packages("tidyverse",repos = "http://cran.us.r-project.org")
 ```
-##Load libraries
+## Load libraries  
 R makes "packages" of commands that are useful for different kinds of data analysis.  In order to use those commands, you load the libraries of commands *each time* you run your project.
 
 ```{r libraries}
@@ -22,32 +22,65 @@ library(nflfastR)
 library(tidyverse)
 ```
 
-##Load data
+## Load data  
 NflfastR allows us to download all the plays from various seasons. Let's get all the plays from the 2021-22 season, into a dataframe called pbp22
 
 ```{r data}
-pbp22 <- load_pbp(2021) 
+pbp21 <- load_pbp(2021) 
 ```
-###What did we just do?
-We used the command load_pbp() to specify we wanted the play-by-play data from 2021 (the 21-22 season is specified by the starting year)./
+### What did we just do?  
+We used the command `load_pbp()` to specify we wanted the play-by-play data from the 2021-22 season./
+We also assigned that play-by-play data to a dataframe (similar to a spreadsheet) called pbp21./
+In the upper right of your RStudio window you should see this object.  How many plays were run during the season?
+
+Now let's look at the data. 
+```{r looking at our data}
+head(pbp21)
+
+#names(pbp21)
+
+```
+The first command, `head()`, showed the first 6 rows of the data, and only 6 of the 372 variables recorded for each play.\
+The second command, `names()`, will show the names of all 372 variables.\  
+How do we know what each variable represents?
+
+Go to the link: 
+https://nflreadr.nflverse.com/articles/dictionary_pbp.html
 
 
-## R Markdown
+## Initial Questions - using `filter()` to just look at runs \
+The command below takes the pbp21 dataframe and applies 2 filters, and creates a new dataframe.\
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+1) What is the new dataframe called, and how many observations does it have? \
+2) What type of plays are in the dataframe? \
+3) What games are represented in the dataframe? 
+```{r initial questions}
+run21 <- pbp21 %>% filter(season_type == "REG" & play_type == "run") 
+```
+Let's look at yards gained through statistics and graphs.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r}
+summary(run21$yards_gained) #summary stats
+run21 %>% ggplot(aes(x = yards_gained)) + 
+  geom_boxplot() + 
+  facet_wrap(~ posteam)
 
-```{r cars}
-summary(cars)
+run21 %>% ggplot(aes(x = yards_gained)) + 
+  geom_histogram() 
 ```
 
-## Including Plots
+Can we compare home and away? \
+Two new commands - `group_by()` and `summarise()`\
 
-You can also embed plots, for example:
+Here, we want to find the average yards gained on running plays for each team. Further, we break it down to when they're playing at home and when they're playing away.
+```{r}
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+ha_run_diff <- run21 %>% 
+  group_by(posteam, posteam_type) %>% 
+  summarise(ave_yards = mean(yards_gained),
+            n = n()) %>% 
+  ungroup()
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
